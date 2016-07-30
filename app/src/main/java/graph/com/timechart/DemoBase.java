@@ -1,8 +1,5 @@
 package graph.com.timechart;
 
-/**
- * Created by HP on 29-07-2016.
- */
 import android.graphics.Typeface;
 import android.os.Bundle;
 import android.renderscript.Type;
