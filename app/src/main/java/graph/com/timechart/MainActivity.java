@@ -1,8 +1,9 @@
 package graph.com.timechart;
 
 import android.graphics.Color;
-import android.support.v7.app.AppCompatActivity;
+import android.os.AsyncTask;
 import android.os.Bundle;
+import android.util.Log;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.view.WindowManager;
@@ -23,6 +24,16 @@ import com.github.mikephil.charting.formatter.FormattedStringCache;
 import com.github.mikephil.charting.interfaces.datasets.ILineDataSet;
 import com.github.mikephil.charting.utils.ColorTemplate;
 
+import org.json.JSONArray;
+import org.json.JSONException;
+import org.json.JSONObject;
+import org.json.JSONTokener;
+
+import java.io.BufferedReader;
+import java.io.IOException;
+import java.io.InputStreamReader;
+import java.net.HttpURLConnection;
+import java.net.URL;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Date;
@@ -261,8 +272,41 @@ public class MainActivity extends DemoBase implements SeekBar.OnSeekBarChangeLis
         // redraw
         mChart.invalidate();
     }
+    private void setData(int count, float range){
+        getChartData get_data=new getChartData();
+        get_data.execute("");
+        JSONArray jsonArray=get_data.getData();//used to store json data as json array
 
-    private void setData(int count, float range) {
+        ArrayList<Entry> values = new ArrayList<Entry>();
+
+        //Iterate the jsonArray and print the info of JSONObjects
+
+        //catch (JSONException e) {e.printStackTrace();}
+        //values.addAll(s);
+        // create a dataset and give it a type
+        LineDataSet set1 = new LineDataSet(values, "DataSet 1");
+        set1.setAxisDependency(YAxis.AxisDependency.LEFT);
+        set1.setColor(ColorTemplate.getHoloBlue());
+        set1.setValueTextColor(ColorTemplate.getHoloBlue());
+        set1.setLineWidth(1.5f);
+        set1.setDrawCircles(false);
+        set1.setDrawValues(false);
+        set1.setFillAlpha(65);
+        set1.setFillColor(ColorTemplate.getHoloBlue());
+        set1.setHighLightColor(Color.rgb(244, 117, 117));
+        set1.setDrawCircleHole(false);
+
+        // create a data object with the datasets
+        LineData data = new LineData(set1);
+        data.setValueTextColor(Color.WHITE);
+        data.setValueTextSize(9f);
+
+        // set data
+        mChart.setData(data);
+
+    }
+
+   /** private void setData(int count, float range) {
 
         long now = System.currentTimeMillis();
         long hourMillis = 3600000L;
@@ -298,7 +342,7 @@ public class MainActivity extends DemoBase implements SeekBar.OnSeekBarChangeLis
 
         // set data
         mChart.setData(data);
-    }
+    } **/
 
     @Override
     public void onStartTrackingTouch(SeekBar seekBar) {
@@ -310,5 +354,109 @@ public class MainActivity extends DemoBase implements SeekBar.OnSeekBarChangeLis
     public void onStopTrackingTouch(SeekBar seekBar) {
         // TODO Auto-generated method stub
 
+    }
+    private class getChartData extends AsyncTask<String, Void, JSONArray> {
+        int len;
+        private final String LOG_TAG = getChartData.class.getSimpleName();
+
+        protected JSONArray doInBackground(String... params) {
+            return getData();
+        }
+
+        protected JSONArray getData() {
+            String decodedString = "";
+            String returnMsg = "";
+            String request = "http://52.77.220.93:4000/getLast?device=thane1&sensor=arduino&lim=300";
+            URL url;
+            HttpURLConnection connection = null;
+            JSONObject myJson=null;
+            String JsonStr = null; //used to store json string
+            JSONArray jsonArray=null; //used to store json data as json array
+            try {
+                url = new URL(request);
+
+                //making connection
+                connection = (HttpURLConnection) url.openConnection();
+                connection.addRequestProperty("Content-Type", "application/json");
+                connection.setRequestMethod("GET");
+
+                // Read the input stream into a String
+                BufferedReader in = new BufferedReader(new InputStreamReader(connection.getInputStream()));
+                //checking if nothing is received
+                if (in== null) {
+                    // Nothing to do.
+                    return null;
+                }
+                StringBuffer buffer = new StringBuffer();//used to store json string as buffer
+                String line;
+                while ((line = in.readLine()) != null) {
+                    // Since it's JSON, adding a newline isn't necessary (it won't affect parsing)
+                    // But it does make debugging a *lot* easier if you print out the completed
+                    // buffer for debugging.
+                    buffer.append(line + "\n");
+                }
+
+                if (buffer.length() == 0) {
+                    // Stream was empty.  No point in parsing.
+                    return null;
+                }
+                JsonStr = buffer.toString();
+
+                //trying to display received data in Log.v
+                Log.v(LOG_TAG, "Forecast string: " + JsonStr);
+
+
+                /**while ((decodedString = in.readLine()) != null) {
+                    returnMsg += decodedString;
+                    myJson = new JSONObject(returnMsg);
+                    String str = myJson.optString("data");
+                    str = str.substring(1, str.length() - 1);
+                    str = str.replace(",", "");
+                    str = str.replace(":", "");
+                    prsdData = str.split("[\"]");
+                    len = prsdData.length;
+                }**/
+                //Get the instance of JSONArray that contains JSONObjects
+                jsonArray = myJson.optJSONArray("data");
+                for (int i = 0; i < jsonArray.length(); i++) {
+                    JSONObject jsonObject = jsonArray.getJSONObject(i);
+                    String name = jsonObject.optString("").toString(); //have to replace "" with something meaning full
+
+                    /**int id = Integer.parseInt(jsonObject.optString("id").toString());
+                    String name = jsonObject.optString("name").toString();
+                    float salary = Float.parseFloat(jsonObject.optString("salary").toString());
+
+                    data += "Node" + i + " : \n id= " + id + " \n Name= " + name + " \n Salary= " + salary + " \n ";**/
+                }
+
+                in.close();
+                //connection.disconnect();
+
+
+            } catch (Exception e) {
+               // e.printStackTrace();
+            }
+            //used to close connection in case of an exception
+            finally {
+                if (connection != null) {
+                    connection.disconnect();
+                }
+            }
+            return jsonArray;
+            //return returnMsg;
+        }
+
+        /**protected void onPostExecute(String result) {
+           // LineChart chart = (LineChart) v.findViewById(R.id.chart1);
+            chart.setTouchEnabled(true);
+            chart.setDrawGridBackground(false);
+           // LineData data = new LineData(getXAxisValues(), getDataSet());
+           // data.mChart.setData(data);
+            //chart.setDescription(sensorUID);
+            chart.animateX(900);
+            chart.setPinchZoom(true);
+            chart.getAxisRight().setEnabled(false);
+            chart.invalidate();
+        }**/
     }
 }
