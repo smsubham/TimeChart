@@ -1,5 +1,4 @@
 package graph.com.timechart;
-
 import android.graphics.Color;
 import android.os.Bundle;
 import android.view.Menu;
