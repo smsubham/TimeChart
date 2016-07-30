@@ -355,15 +355,15 @@ public class MainActivity extends DemoBase implements SeekBar.OnSeekBarChangeLis
         // TODO Auto-generated method stub
 
     }
-    private class getChartData extends AsyncTask<String, Void, JSONArray> {
+    private class getChartData extends AsyncTask<String, Void, String> {
         int len;
         private final String LOG_TAG = getChartData.class.getSimpleName();
 
-        protected JSONArray doInBackground(String... params) {
+        protected String doInBackground(String... params) {
             return getData();
         }
 
-        protected JSONArray getData() {
+        protected String getData() {
             String decodedString = "";
             String returnMsg = "";
             String request = "http://52.77.220.93:4000/getLast?device=thane1&sensor=arduino&lim=300";
@@ -442,8 +442,8 @@ public class MainActivity extends DemoBase implements SeekBar.OnSeekBarChangeLis
                     connection.disconnect();
                 }
             }
-            return jsonArray;
-            //return returnMsg;
+            //return jsonArray;
+            return returnMsg;
         }
 
         /**protected void onPostExecute(String result) {
