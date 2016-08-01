@@ -275,7 +275,6 @@ public class MainActivity extends DemoBase implements SeekBar.OnSeekBarChangeLis
     private void setData(int count, float range){
         getChartData get_data=new getChartData();
         get_data.execute("");
-        JSONArray jsonArray=get_data.getData();//used to store json data as json array
 
         ArrayList<Entry> values = new ArrayList<Entry>();
 
@@ -372,6 +371,7 @@ public class MainActivity extends DemoBase implements SeekBar.OnSeekBarChangeLis
             JSONObject myJson=null;
             String JsonStr = null; //used to store json string
             JSONArray jsonArray=null; //used to store json data as json array
+            ArrayList<Integer> data = new ArrayList<>();  //used to store timestamp corresponding value i.e. 303 for 1467871629
             try {
                 url = new URL(request);
 
@@ -405,6 +405,13 @@ public class MainActivity extends DemoBase implements SeekBar.OnSeekBarChangeLis
                 //trying to display received data in Log.v
                 Log.v(LOG_TAG, "Forecast string: " + JsonStr);
 
+                //Creates a new JSONObject with name/value mappings from the JSON string.
+                JSONObject jsonObject =new JSONObject(JsonStr);
+                JSONArray jsonArray1=jsonObject.optJSONArray("data");
+
+                //gets all time stamp value as array of strings
+                JSONObject json2 = jsonObject.getJSONObject("data");
+                JSONArray jsonArray_keys=json2.names();
 
                 /**while ((decodedString = in.readLine()) != null) {
                     returnMsg += decodedString;
@@ -416,11 +423,13 @@ public class MainActivity extends DemoBase implements SeekBar.OnSeekBarChangeLis
                     prsdData = str.split("[\"]");
                     len = prsdData.length;
                 }**/
+
                 //Get the instance of JSONArray that contains JSONObjects
-                jsonArray = myJson.optJSONArray("data");
+                //jsonArray = myJson.optJSONArray("data");
                 for (int i = 0; i < jsonArray.length(); i++) {
-                    JSONObject jsonObject = jsonArray.getJSONObject(i);
-                    String name = jsonObject.optString("").toString(); //have to replace "" with something meaning full
+                    JSONObject jsonObject1 = jsonArray.getJSONObject(i);
+                    Integer value = Integer.parseInt(jsonObject1.optString(jsonArray_keys.getString(i)));  //jsonArray_keys.getString(i) will get time stamp value
+                    data.add(value);
 
                     /**int id = Integer.parseInt(jsonObject.optString("id").toString());
                     String name = jsonObject.optString("name").toString();
@@ -430,8 +439,8 @@ public class MainActivity extends DemoBase implements SeekBar.OnSeekBarChangeLis
                 }
 
                 in.close();
-                //connection.disconnect();
 
+                 Log.v(LOG_TAG, "Forecast string: " + JsonStr);
 
             } catch (Exception e) {
                // e.printStackTrace();
@@ -439,7 +448,7 @@ public class MainActivity extends DemoBase implements SeekBar.OnSeekBarChangeLis
             //used to close connection in case of an exception
             finally {
                 if (connection != null) {
-                    connection.disconnect();
+                    connection.disconnect();              //connection.disconnect();
                 }
             }
             //return jsonArray;
