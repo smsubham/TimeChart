@@ -27,10 +27,8 @@ import com.github.mikephil.charting.utils.ColorTemplate;
 import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
-import org.json.JSONTokener;
 
 import java.io.BufferedReader;
-import java.io.IOException;
 import java.io.InputStreamReader;
 import java.net.HttpURLConnection;
 import java.net.URL;
@@ -44,9 +42,12 @@ public class MainActivity extends DemoBase implements SeekBar.OnSeekBarChangeLis
     private LineChart mChart;
     private SeekBar mSeekBarX;
     private TextView tvX;
+    ArrayList<Float> data = new ArrayList<>();  //used to store timestamp corresponding value in getChartData class i.e. 303 for 1467871629
+    JSONObject jsonObject;
+    JSONArray jsonArray1;
 
     @Override
-    protected void onCreate(Bundle savedInstanceState) {
+    protected void onCreate(Bundle savedInstanceState){
         super.onCreate(savedInstanceState);
         getWindow().setFlags(WindowManager.LayoutParams.FLAG_FULLSCREEN,
                 WindowManager.LayoutParams.FLAG_FULLSCREEN);
@@ -79,9 +80,13 @@ public class MainActivity extends DemoBase implements SeekBar.OnSeekBarChangeLis
         // set an alternative background color
         mChart.setBackgroundColor(Color.WHITE);
         mChart.setViewPortOffsets(0f, 0f, 0f, 0f);
-
+try{
+    // add data
+    setData();
+}
+catch (JSONException e){}
         // add data
-        setData(100, 30);
+        //setData();
         mChart.invalidate();
 
         // get the legend (only possible after setting data)
@@ -264,20 +269,32 @@ public class MainActivity extends DemoBase implements SeekBar.OnSeekBarChangeLis
 
     @Override
     public void onProgressChanged(SeekBar seekBar, int progress, boolean fromUser) {
-
         tvX.setText("" + (mSeekBarX.getProgress()));
 
-        setData(mSeekBarX.getProgress(), 50);
+        //setData(mSeekBarX.getProgress(), 50);
 
         // redraw
         mChart.invalidate();
     }
-    private void setData(int count, float range){
+    private void setData() throws JSONException{
         getChartData get_data=new getChartData();
+
         get_data.execute("");
 
-        ArrayList<Entry> values = new ArrayList<Entry>();
 
+        ArrayList<Float> listdata = new ArrayList<>(); //timestamp data for graph
+       // JSONArray jArray = (JSONArray)jsonObject;
+        if (jsonArray1 != null) {
+            for (int i=0;i<jsonArray1.length();i++){
+                listdata.add(Float.parseFloat(jsonArray1.get(i).toString()));
+            }
+        }
+
+        ArrayList<Entry> values = new ArrayList<Entry>(); //data for y-axis
+        for (int i=0;i<data.size();i++){
+            values.add(new Entry(listdata.get(i),data.get(i))); //adding data for x and y axis respectively
+        }
+        //values.addAll(new Entry());
         //Iterate the jsonArray and print the info of JSONObjects
 
         //catch (JSONException e) {e.printStackTrace();}
@@ -371,7 +388,7 @@ public class MainActivity extends DemoBase implements SeekBar.OnSeekBarChangeLis
             JSONObject myJson=null;
             String JsonStr = null; //used to store json string
             JSONArray jsonArray=null; //used to store json data as json array
-            ArrayList<Integer> data = new ArrayList<>();  //used to store timestamp corresponding value i.e. 303 for 1467871629
+
             try {
                 url = new URL(request);
 
@@ -406,8 +423,8 @@ public class MainActivity extends DemoBase implements SeekBar.OnSeekBarChangeLis
                 Log.v(LOG_TAG, "Forecast string: " + JsonStr);
 
                 //Creates a new JSONObject with name/value mappings from the JSON string.
-                JSONObject jsonObject =new JSONObject(JsonStr);
-                JSONArray jsonArray1=jsonObject.optJSONArray("data");
+                jsonObject =new JSONObject(JsonStr);
+                jsonArray1=jsonObject.optJSONArray("data");
 
                 //gets all time stamp value as array of strings
                 JSONObject json2 = jsonObject.getJSONObject("data");
@@ -428,7 +445,7 @@ public class MainActivity extends DemoBase implements SeekBar.OnSeekBarChangeLis
                 //jsonArray = myJson.optJSONArray("data");
                 for (int i = 0; i < jsonArray.length(); i++) {
                     JSONObject jsonObject1 = jsonArray.getJSONObject(i);
-                    Integer value = Integer.parseInt(jsonObject1.optString(jsonArray_keys.getString(i)));  //jsonArray_keys.getString(i) will get time stamp value
+                    Float value = Float.parseFloat(jsonObject1.optString(jsonArray_keys.getString(i)));  //jsonArray_keys.getString(i) will get time stamp value
                     data.add(value);
 
                     /**int id = Integer.parseInt(jsonObject.optString("id").toString());
